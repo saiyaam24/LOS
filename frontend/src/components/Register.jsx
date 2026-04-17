@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-
+import { API_URL } from '../api';
 
 export default function Register({ setToken, setRole }) {
   const [email, setEmail] = useState('');
@@ -16,13 +16,14 @@ export default function Register({ setToken, setRole }) {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', {
+      const response = await axios.post(`${API_URL}/api/auth/register`, {
         email,
         password
       });
+
       console.log('Registration successful', response.data);
       // Let's immediately login after registration to provide a seamless UX
-      const loginRes = await axios.post('http://localhost:5000/api/auth/login', {
+      const loginRes = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password
       });

@@ -111,13 +111,25 @@ export default function LeadDetails({ token, role }) {
         {/* Action Controls based on Stage and Role */}
         <div className="flex gap-2">
           {isAnalyst && lead.stage === 'pre_screening' && (
-            <button onClick={() => updateLead({ ...financialData, stage: 'underwriting' })} className="btn-primary py-2 px-4 shadow-none text-sm">Approve Pre-Screening</button>
+            <button onClick={() => {
+              if (!financialData.turnover || !financialData.profit || !financialData.industry || !financialData.dateOfIncorporation) {
+                alert('Please fill out all Financial Analyst Inputs before approving pre-screening.');
+                return;
+              }
+              updateLead({ ...financialData, stage: 'underwriting' });
+            }} className="btn-primary py-2 px-4 shadow-none text-sm">Approve Pre-Screening</button>
           )}
           {isAnalyst && lead.stage === 'underwriting' && (
             <button onClick={() => updateLead({ stage: 'cam_assessment' })} className="btn-primary py-2 px-4 shadow-none text-sm">Move to CAM</button>
           )}
           {isAnalyst && lead.stage === 'cam_assessment' && (
-            <button onClick={() => updateLead({ ...rcmData, stage: 'rcm_review' })} className="btn-primary py-2 px-4 shadow-none text-sm">Send to RCM</button>
+            <button onClick={() => {
+              if (!rcmData.recommendedAmount || !rcmData.recommendedTenure || !rcmData.internalNotes) {
+                alert('Please fill out the recommended amount, tenure, and internal notes before sending to RCM.');
+                return;
+              }
+              updateLead({ ...rcmData, stage: 'rcm_review' });
+            }} className="btn-primary py-2 px-4 shadow-none text-sm">Send to RCM</button>
           )}
           {isRcm && lead.stage === 'rcm_review' && (
             <>
@@ -159,28 +171,38 @@ export default function LeadDetails({ token, role }) {
             )}
 
             <div className="space-y-3">
-              {documents.map(doc => (
-                <div key={doc._id} className="flex justify-between items-center p-3 border border-slate-100 dark:border-slate-700 rounded-lg hover:shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">📄</div>
-                    <div>
-                      <p className="font-medium text-sm text-slate-800 dark:text-white capitalize">{doc.type.replace('_', ' ')}</p>
-                      <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline">{doc.originalName}</a>
+              {documents.length === 0 ? (
+                <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                  No documents found. {role === 'sales' ? 'Use the form above to upload documents.' : 'Waiting for documents to be uploaded.'}
+                </div>
+              ) : (
+                documents.map(doc => (
+                  <div key={doc._id} className="flex justify-between items-center p-3 border border-slate-100 dark:border-slate-700 rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">📄</div>
+                      <div>
+                        <p className="font-medium text-sm text-slate-800 dark:text-white capitalize">{doc.type.replace('_', ' ')}</p>
+                        <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">{doc.originalName}</a>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${doc.status === 'verified' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : doc.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}>
+                        {doc.status.replace('_', ' ')}
+                      </span>
+                      {isAnalyst && doc.status === 'pending_verification' && (
+                        <div className="flex gap-1.5 ml-2">
+                          <button onClick={() => verifyDoc(doc._id, 'verified')} className="p-1.5 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-md shadow-sm transition-colors" title="Verify Document">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                          </button>
+                          <button onClick={() => verifyDoc(doc._id, 'rejected', 'Invalid Document')} className="p-1.5 text-xs bg-rose-500 hover:bg-rose-600 text-white rounded-md shadow-sm transition-colors" title="Reject Document">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${doc.status === 'verified' ? 'bg-emerald-100 text-emerald-700' : doc.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {doc.status.toUpperCase()}
-                    </span>
-                    {isAnalyst && doc.status === 'pending_verification' && (
-                      <div className="flex gap-1">
-                        <button onClick={() => verifyDoc(doc._id, 'verified')} className="p-1 px-2 text-xs bg-emerald-500 text-white rounded shadow-sm">✓</button>
-                        <button onClick={() => verifyDoc(doc._id, 'rejected', 'Invalid Document')} className="p-1 px-2 text-xs bg-rose-500 text-white rounded shadow-sm">✗</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 

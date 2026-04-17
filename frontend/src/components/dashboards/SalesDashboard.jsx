@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
+
 export default function SalesDashboard({ token }) {
   const [leads, setLeads] = useState([]);
   const [showWizard, setShowWizard] = useState(false);

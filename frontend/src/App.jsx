@@ -9,6 +9,7 @@ import AnalystDashboard from './components/dashboards/AnalystDashboard';
 import RCMDashboard from './components/dashboards/RCMDashboard';
 import LeadDetails from './components/LeadDetails';
 
+
 // Role-based Router
 function RoleBasedDashboard({ token, role }) {
   if (role === 'sales') return <SalesDashboard token={token} />;
@@ -78,7 +79,7 @@ function App() {
   // Validate session on load
   useEffect(() => {
     if (token) {
-      axios.get('https://los-hrhx.onrender.com/api/auth/me', {
+      axios.get('http://localhost:5000/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => {
